@@ -50,6 +50,24 @@ public class WorkloadService
             // 取得所有任務資料
             var allTasks = await _sheetsService.GetPaginatedDataAsync(1, 1000, "key", "asc", sprintName);
             
+            // 檢查是否有任務資料
+            if (!allTasks.Data.Any())
+            {
+                // 如果沒有任務資料，返回空的工作分配
+                var emptyDistribution = new WorkloadDistribution(
+                    SprintName: sprintName,
+                    TotalStoryPoints: 0,
+                    AverageStoryPoints: 0,
+                    MemberWorkloads: new List<MemberWorkload>(),
+                    WorkloadImbalance: false,
+                    ImbalanceThreshold: _imbalanceThreshold,
+                    LastUpdated: DateTime.UtcNow
+                );
+                
+                _workloadCache[sprintName] = emptyDistribution;
+                return emptyDistribution;
+            }
+            
             // 分析工作分配
             var memberWorkloads = await AnalyzeMemberWorkloadsAsync(allTasks.Data);
             
