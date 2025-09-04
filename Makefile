@@ -1,5 +1,8 @@
 # Jira Dashboard Workshop - Docker 快速指令
 
+# 自動檢測 Docker Compose 命令
+DOCKER_COMPOSE := $(shell command -v docker-compose 2> /dev/null || echo "docker compose")
+
 .PHONY: help build up down restart logs clean install test
 
 # 預設目標
@@ -10,55 +13,55 @@ help: ## 顯示說明
 
 # 基本操作
 build: ## 建構所有容器
-	docker-compose build
+	$(DOCKER_COMPOSE) build
 
 up: ## 啟動所有服務
-	docker-compose up
+	$(DOCKER_COMPOSE) up
 
 up-d: ## 在背景啟動所有服務
-	docker-compose up -d
+	$(DOCKER_COMPOSE) up -d
 
 down: ## 停止所有服務
-	docker-compose down
+	$(DOCKER_COMPOSE) down
 
 restart: ## 重啟所有服務
-	docker-compose restart
+	$(DOCKER_COMPOSE) restart
 
 # 開發指令
 dev: ## 開發模式啟動 (with build)
-	docker-compose up --build
+	$(DOCKER_COMPOSE) up --build
 
 logs: ## 查看所有服務 logs
-	docker-compose logs -f
+	$(DOCKER_COMPOSE) logs -f
 
 logs-frontend: ## 查看前端 logs
-	docker-compose logs -f frontend
+	$(DOCKER_COMPOSE) logs -f frontend
 
 logs-backend: ## 查看 .NET 後端 logs
-	docker-compose logs -f backend-dotnet
+	$(DOCKER_COMPOSE) logs -f backend-dotnet
 
 # 進入容器
 shell-frontend: ## 進入前端容器
-	docker-compose exec frontend sh
+	$(DOCKER_COMPOSE) exec frontend sh
 
 shell-backend: ## 進入 .NET 後端容器
-	docker-compose exec backend-dotnet bash
+	$(DOCKER_COMPOSE) exec backend-dotnet bash
 
 # 測試和檢查
 ps: ## 查看服務狀態
-	docker-compose ps
+	$(DOCKER_COMPOSE) ps
 
 test-frontend: ## 執行前端測試
-	docker-compose exec frontend npm test
+	$(DOCKER_COMPOSE) exec frontend npm test
 
 test-backend: ## 執行 .NET 後端測試
-	docker-compose exec backend-dotnet dotnet test
+	$(DOCKER_COMPOSE) exec backend-dotnet dotnet test
 
 test: ## 執行所有測試
 	@echo "🧪 執行前端測試..."
-	@docker-compose exec frontend npm test
+	@$(DOCKER_COMPOSE) exec frontend npm test
 	@echo "🧪 執行 .NET 後端測試..."
-	@docker-compose exec backend-dotnet dotnet test
+	@$(DOCKER_COMPOSE) exec backend-dotnet dotnet test
 
 health: ## 檢查服務健康狀態
 	@echo "🔍 檢查前端服務..."
@@ -68,21 +71,21 @@ health: ## 檢查服務健康狀態
 
 # 清理操作
 clean: ## 清理容器和 images
-	docker-compose down --rmi all
+	$(DOCKER_COMPOSE) down --rmi all
 
 clean-all: ## 完全清理 (包含 volumes)
-	docker-compose down --rmi all -v
+	$(DOCKER_COMPOSE) down --rmi all -v
 	docker system prune -f
 
 # 安裝和設定
 install: ## 安裝專案依賴 (在容器內)
-	docker-compose exec frontend npm install
-	docker-compose exec backend-dotnet dotnet restore
+	$(DOCKER_COMPOSE) exec frontend npm install
+	$(DOCKER_COMPOSE) exec backend-dotnet dotnet restore
 
 # 課程專用指令
 workshop-start: ## 🎯 課程開始 - 啟動所有服務
 	@echo "🚀 啟動 Jira Dashboard Workshop 環境..."
-	docker-compose up --build -d
+	$(DOCKER_COMPOSE) up --build -d
 	@echo "⏳ 等待服務啟動..."
 	@sleep 10
 	@make health
@@ -93,13 +96,13 @@ workshop-start: ## 🎯 課程開始 - 啟動所有服務
 
 workshop-stop: ## 🛑 課程結束 - 停止所有服務
 	@echo "🛑 停止 Workshop 環境..."
-	docker-compose down
+	$(DOCKER_COMPOSE) down
 	@echo "✅ 環境已停止"
 
 workshop-reset: ## 🔄 重置環境 (故障排除用)
 	@echo "🔄 重置 Workshop 環境..."
-	docker-compose down --rmi all -v
-	docker-compose up --build -d
+	$(DOCKER_COMPOSE) down --rmi all -v
+	$(DOCKER_COMPOSE) up --build -d
 	@sleep 10
 	@make health
 	@echo "✅ 環境已重置"
