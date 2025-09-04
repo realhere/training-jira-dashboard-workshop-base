@@ -105,3 +105,121 @@ public record SprintInfo(
     [property: JsonPropertyName("complete_date")] DateTime? CompleteDate,
     [property: JsonPropertyName("goal")] string Goal
 );
+
+// Notification Models for US-003
+public record NotificationAlert(
+    [property: JsonPropertyName("id")] string Id,
+    [property: JsonPropertyName("sprint_name")] string SprintName,
+    [property: JsonPropertyName("alert_type")] string AlertType, // 'warning', 'danger'
+    [property: JsonPropertyName("title")] string Title,
+    [property: JsonPropertyName("message")] string Message,
+    [property: JsonPropertyName("current_completion_rate")] double CurrentCompletionRate,
+    [property: JsonPropertyName("ideal_completion_rate")] double IdealCompletionRate,
+    [property: JsonPropertyName("lag_percentage")] double LagPercentage,
+    [property: JsonPropertyName("suggested_actions")] List<string> SuggestedActions,
+    [property: JsonPropertyName("created_at")] DateTime CreatedAt,
+    [property: JsonPropertyName("is_acknowledged")] bool IsAcknowledged,
+    [property: JsonPropertyName("acknowledged_at")] DateTime? AcknowledgedAt
+);
+
+public record NotificationSettings(
+    [property: JsonPropertyName("warning_threshold")] double WarningThreshold, // 預警閾值 (預設 10%)
+    [property: JsonPropertyName("danger_threshold")] double DangerThreshold,   // 危險閾值 (預設 20%)
+    [property: JsonPropertyName("email_notifications")] bool EmailNotifications,
+    [property: JsonPropertyName("dashboard_notifications")] bool DashboardNotifications,
+    [property: JsonPropertyName("cooldown_minutes")] int CooldownMinutes // 冷卻時間 (預設 30 分鐘)
+);
+
+public record NotificationResponse(
+    [property: JsonPropertyName("alerts")] List<NotificationAlert> Alerts,
+    [property: JsonPropertyName("settings")] NotificationSettings Settings,
+    [property: JsonPropertyName("last_checked")] DateTime LastChecked
+);
+
+public record AcknowledgeNotificationRequest(
+    [property: JsonPropertyName("alert_id")] string AlertId
+);
+
+public record UpdateNotificationSettingsRequest(
+    [property: JsonPropertyName("warning_threshold")] double? WarningThreshold,
+    [property: JsonPropertyName("danger_threshold")] double? DangerThreshold,
+    [property: JsonPropertyName("email_notifications")] bool? EmailNotifications,
+    [property: JsonPropertyName("dashboard_notifications")] bool? DashboardNotifications,
+    [property: JsonPropertyName("cooldown_minutes")] int? CooldownMinutes
+);
+
+// Work Assignment Models for US-004
+public record TeamMember(
+    [property: JsonPropertyName("id")] string Id,
+    [property: JsonPropertyName("name")] string Name,
+    [property: JsonPropertyName("email")] string Email,
+    [property: JsonPropertyName("role")] string Role,
+    [property: JsonPropertyName("avatar_url")] string? AvatarUrl
+);
+
+public record TaskAssignment(
+    [property: JsonPropertyName("task_id")] string TaskId,
+    [property: JsonPropertyName("task_key")] string TaskKey,
+    [property: JsonPropertyName("summary")] string Summary,
+    [property: JsonPropertyName("story_points")] double StoryPoints,
+    [property: JsonPropertyName("status")] string Status,
+    [property: JsonPropertyName("priority")] string Priority,
+    [property: JsonPropertyName("assignee_id")] string AssigneeId,
+    [property: JsonPropertyName("assignee_name")] string AssigneeName,
+    [property: JsonPropertyName("created_date")] DateTime CreatedDate,
+    [property: JsonPropertyName("updated_date")] DateTime UpdatedDate,
+    [property: JsonPropertyName("due_date")] DateTime? DueDate
+);
+
+public record MemberWorkload(
+    [property: JsonPropertyName("member")] TeamMember Member,
+    [property: JsonPropertyName("total_story_points")] double TotalStoryPoints,
+    [property: JsonPropertyName("completed_story_points")] double CompletedStoryPoints,
+    [property: JsonPropertyName("remaining_story_points")] double RemainingStoryPoints,
+    [property: JsonPropertyName("total_tasks")] int TotalTasks,
+    [property: JsonPropertyName("completed_tasks")] int CompletedTasks,
+    [property: JsonPropertyName("in_progress_tasks")] int InProgressTasks,
+    [property: JsonPropertyName("todo_tasks")] int TodoTasks,
+    [property: JsonPropertyName("completion_rate")] double CompletionRate,
+    [property: JsonPropertyName("workload_status")] string WorkloadStatus, // 'normal', 'overloaded', 'underloaded'
+    [property: JsonPropertyName("tasks")] List<TaskAssignment> Tasks
+);
+
+public record WorkloadDistribution(
+    [property: JsonPropertyName("sprint_name")] string SprintName,
+    [property: JsonPropertyName("total_story_points")] double TotalStoryPoints,
+    [property: JsonPropertyName("average_story_points")] double AverageStoryPoints,
+    [property: JsonPropertyName("member_workloads")] List<MemberWorkload> MemberWorkloads,
+    [property: JsonPropertyName("workload_imbalance")] bool WorkloadImbalance,
+    [property: JsonPropertyName("imbalance_threshold")] double ImbalanceThreshold,
+    [property: JsonPropertyName("last_updated")] DateTime LastUpdated
+);
+
+public record WorkloadAlert(
+    [property: JsonPropertyName("member_id")] string MemberId,
+    [property: JsonPropertyName("member_name")] string MemberName,
+    [property: JsonPropertyName("alert_type")] string AlertType, // 'overloaded', 'underloaded'
+    [property: JsonPropertyName("current_load")] double CurrentLoad,
+    [property: JsonPropertyName("average_load")] double AverageLoad,
+    [property: JsonPropertyName("deviation_percentage")] double DeviationPercentage,
+    [property: JsonPropertyName("suggested_action")] string SuggestedAction
+);
+
+public record WorkloadHistory(
+    [property: JsonPropertyName("date")] DateTime Date,
+    [property: JsonPropertyName("member_workloads")] List<MemberWorkload> MemberWorkloads,
+    [property: JsonPropertyName("total_story_points")] double TotalStoryPoints,
+    [property: JsonPropertyName("average_story_points")] double AverageStoryPoints
+);
+
+public record WorkloadTrend(
+    [property: JsonPropertyName("dates")] List<string> Dates,
+    [property: JsonPropertyName("member_trends")] List<MemberTrend> MemberTrends,
+    [property: JsonPropertyName("average_trend")] List<double> AverageTrend
+);
+
+public record MemberTrend(
+    [property: JsonPropertyName("member_id")] string MemberId,
+    [property: JsonPropertyName("member_name")] string MemberName,
+    [property: JsonPropertyName("story_points")] List<double> StoryPoints
+);

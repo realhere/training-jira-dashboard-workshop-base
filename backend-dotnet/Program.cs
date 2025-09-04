@@ -13,6 +13,18 @@ builder.Services.AddSingleton<GoogleSheetsService>(provider =>
     return new GoogleSheetsService(httpClient, configuration);
 });
 
+builder.Services.AddSingleton<NotificationService>(provider =>
+{
+    var sheetsService = provider.GetRequiredService<GoogleSheetsService>();
+    return new NotificationService(sheetsService);
+});
+
+builder.Services.AddSingleton<WorkloadService>(provider =>
+{
+    var sheetsService = provider.GetRequiredService<GoogleSheetsService>();
+    return new WorkloadService(sheetsService);
+});
+
 builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(
@@ -207,6 +219,167 @@ app.MapPost("/api/config/sheet", (
     catch (Exception ex)
     {
         return Results.Problem(ex.Message);
+    }
+});
+
+// Notification API endpoints for US-003
+app.MapGet("/api/notifications", async (NotificationService notificationService) =>
+{
+    try
+    {
+        var response = notificationService.GetActiveNotifications();
+        return Results.Ok(response);
+    }
+    catch (Exception ex)
+    {
+        return Results.Problem($"Failed to get notifications: {ex.Message}");
+    }
+});
+
+app.MapPost("/api/notifications/check", async (NotificationService notificationService) =>
+{
+    try
+    {
+        var newAlerts = await notificationService.CheckSprintProgressAsync();
+        return Results.Ok(new { alerts_created = newAlerts.Count, alerts = newAlerts });
+    }
+    catch (Exception ex)
+    {
+        return Results.Problem($"Failed to check sprint progress: {ex.Message}");
+    }
+});
+
+app.MapPost("/api/notifications/check-sprint/{sprintName}", async (string sprintName, NotificationService notificationService) =>
+{
+    try
+    {
+        var newAlerts = await notificationService.CheckSpecificSprintAsync(sprintName);
+        return Results.Ok(new { alerts_created = newAlerts.Count, alerts = newAlerts });
+    }
+    catch (Exception ex)
+    {
+        return Results.Problem($"Failed to check sprint progress for {sprintName}: {ex.Message}");
+    }
+});
+
+app.MapPost("/api/notifications/acknowledge", (
+    [FromBody] AcknowledgeNotificationRequest request,
+    NotificationService notificationService) =>
+{
+    try
+    {
+        var success = notificationService.AcknowledgeNotification(request.AlertId);
+        if (success)
+        {
+            return Results.Ok(new { success = true, message = "Notification acknowledged successfully" });
+        }
+        else
+        {
+            return Results.NotFound(new { success = false, message = "Notification not found" });
+        }
+    }
+    catch (Exception ex)
+    {
+        return Results.Problem($"Failed to acknowledge notification: {ex.Message}");
+    }
+});
+
+app.MapGet("/api/notifications/settings", (NotificationService notificationService) =>
+{
+    try
+    {
+        var response = notificationService.GetActiveNotifications();
+        return Results.Ok(response.Settings);
+    }
+    catch (Exception ex)
+    {
+        return Results.Problem($"Failed to get notification settings: {ex.Message}");
+    }
+});
+
+app.MapPost("/api/notifications/settings", (
+    [FromBody] UpdateNotificationSettingsRequest request,
+    NotificationService notificationService) =>
+{
+    try
+    {
+        notificationService.UpdateSettings(request);
+        return Results.Ok(new { success = true, message = "Settings updated successfully" });
+    }
+    catch (Exception ex)
+    {
+        return Results.Problem($"Failed to update notification settings: {ex.Message}");
+    }
+});
+
+app.MapPost("/api/notifications/cleanup", (NotificationService notificationService) =>
+{
+    try
+    {
+        notificationService.CleanupAcknowledgedNotifications();
+        return Results.Ok(new { success = true, message = "Acknowledged notifications cleaned up" });
+    }
+    catch (Exception ex)
+    {
+        return Results.Problem($"Failed to cleanup notifications: {ex.Message}");
+    }
+});
+
+// Workload API endpoints for US-004
+app.MapGet("/api/workload/{sprintName}", async (string sprintName, WorkloadService workloadService) =>
+{
+    try
+    {
+        var distribution = await workloadService.GetWorkloadDistributionAsync(sprintName);
+        return Results.Ok(distribution);
+    }
+    catch (ArgumentException ex)
+    {
+        return Results.NotFound(ex.Message);
+    }
+    catch (Exception ex)
+    {
+        return Results.Problem($"Failed to get workload distribution: {ex.Message}");
+    }
+});
+
+app.MapGet("/api/workload/{sprintName}/alerts", async (string sprintName, WorkloadService workloadService) =>
+{
+    try
+    {
+        var alerts = await workloadService.GetWorkloadAlertsAsync(sprintName);
+        return Results.Ok(new { alerts });
+    }
+    catch (Exception ex)
+    {
+        return Results.Problem($"Failed to get workload alerts: {ex.Message}");
+    }
+});
+
+app.MapGet("/api/workload/{sprintName}/trend", async (string sprintName, WorkloadService workloadService) =>
+{
+    try
+    {
+        var trend = await workloadService.GetWorkloadTrendAsync(sprintName);
+        return Results.Ok(trend);
+    }
+    catch (Exception ex)
+    {
+        return Results.Problem($"Failed to get workload trend: {ex.Message}");
+    }
+});
+
+app.MapPost("/api/workload/{sprintName}/refresh", async (string sprintName, WorkloadService workloadService) =>
+{
+    try
+    {
+        workloadService.ClearCache(sprintName);
+        var distribution = await workloadService.GetWorkloadDistributionAsync(sprintName);
+        return Results.Ok(new { success = true, distribution });
+    }
+    catch (Exception ex)
+    {
+        return Results.Problem($"Failed to refresh workload data: {ex.Message}");
     }
 });
 
