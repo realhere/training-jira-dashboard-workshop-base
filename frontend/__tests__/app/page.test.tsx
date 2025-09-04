@@ -15,7 +15,7 @@ describe('Home Page', () => {
     render(<Home />)
     
     // 測試是否顯示測試訊息
-    const testMessage = screen.getByText(/請修改這行文字並 commit 到 GitHub 確認是否能修改！/)
+    const testMessage = screen.getByText(/Jenson 測試修改文字/)
     expect(testMessage).toBeInTheDocument()
   })
 
