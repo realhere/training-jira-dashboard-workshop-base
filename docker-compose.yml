@@ -1,0 +1,74 @@
+services:
+  # Frontend (React/Vue from v0.dev)
+  frontend:
+    build: 
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:8001
+      - CHOKIDAR_USEPOLLING=true
+    
+    stdin_open: true
+    tty: true
+    networks:
+      - workshop-network
+
+  # Backend (Python FastAPI)
+  # backend:
+  #   build: 
+  #     context: ./backend
+  #     dockerfile: Dockerfile
+  #   ports:
+  #     - "8000:8000"
+  #   volumes:
+  #     - ./backend:/app
+  #     - ./mock-data:/app/data
+  #   environment:
+  #     - PYTHONPATH=/app
+  #     - DEBUG=true
+  #     - GOOGLE_SHEET_ID=1RmJjghgiV3XWLl2BaxT-md8CP3pqb1Wuk-EhFoqp1VM
+  #     - SHEET_NAME=rawData
+  #   restart: unless-stopped
+  #   networks:
+  #     - workshop-network
+
+  # Backend (.NET)
+  backend-dotnet:
+    build:
+      context: ./backend-dotnet
+      dockerfile: Dockerfile
+    ports:
+      - "8001:8080"
+    volumes:
+      - ./backend-dotnet:/app
+    command: dotnet watch run --urls "http://+:8080"
+    environment:
+      - ASPNETCORE_URLS=http://+:8080
+    restart: unless-stopped
+    networks:
+      - workshop-network
+
+  # Development tools container (optional)
+  devtools:
+    image: node:18-alpine
+    working_dir: /workspace
+    volumes:
+      - .:/workspace
+    command: tail -f /dev/null
+    networks:
+      - workshop-network
+    profiles:
+      - dev
+
+networks:
+  workshop-network:
+    driver: bridge
+
+volumes:
+  node_modules:
+  python_cache:
